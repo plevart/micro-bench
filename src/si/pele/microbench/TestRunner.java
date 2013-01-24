@@ -191,4 +191,17 @@ public class TestRunner {
             threads
         );
     }
+
+    protected static void doTest(Class<? extends Test> testClass, long runDurationMillis, int minThreads, int maxThreads, int stepThreads) throws InterruptedException {
+        System.out.println("Run duration: " + runDurationMillis + " ms, #of logical CPUS: " + Runtime.getRuntime().availableProcessors());
+        System.out.println();
+        System.out.println("Warm up:");
+        System.out.println(runTest(testClass, runDurationMillis, minThreads));
+        System.out.println(runTest(testClass, runDurationMillis, minThreads));
+
+        System.out.println("Measure:");
+        for (int threads = minThreads; threads <= maxThreads; threads += stepThreads) {
+            System.out.println(runTest(testClass, runDurationMillis, threads));
+        }
+    }
 }
