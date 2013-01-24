@@ -4,6 +4,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
 
 /**
+ * A simple micro benchmark test runner
+ *
+ * @author peter.levart@gmail.com
  */
 public class TestRunner {
 
