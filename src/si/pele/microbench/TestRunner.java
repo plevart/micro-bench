@@ -125,7 +125,7 @@ public class TestRunner {
 
         public String toString(boolean dumpIndividualThreads) {
             StringBuilder sb = new StringBuilder();
-            sb.append(String.format("%30s: %3d threads, Tavg = %,9.2f ns/op (σ = %,6.2f ns/op)", testName, threads, nsPerOpAvg, nsPerOpSigma));
+            sb.append(String.format("%12d threads, Tavg = %,9.2f ns/op (σ = %,6.2f ns/op)", threads, nsPerOpAvg, nsPerOpSigma));
             if (dumpIndividualThreads) {
                 sb.append(" [");
                 for (int i = 0; i < nsPerOps.length; i++) {
@@ -196,15 +196,17 @@ public class TestRunner {
     }
 
     protected static void doTest(Class<? extends Test> testClass, long runDurationMillis, int minThreads, int maxThreads, int stepThreads) throws InterruptedException {
-        System.out.println("Run duration: " + runDurationMillis + " ms, #of logical CPUS: " + Runtime.getRuntime().availableProcessors());
-        System.out.println();
-        System.out.println("Warm up:");
+        System.out.println("#");
+        System.out.printf("# %s: run duration: %,6d ms, #of logical CPUS: %d\n", testClass.getSimpleName(), runDurationMillis, Runtime.getRuntime().availableProcessors());
+        System.out.println("#");
+        System.out.println("# Warm up:");
         System.out.println(runTest(testClass, runDurationMillis, minThreads));
         System.out.println(runTest(testClass, runDurationMillis, minThreads));
 
-        System.out.println("Measure:");
+        System.out.println("# Measure:");
         for (int threads = minThreads; threads <= maxThreads; threads += stepThreads) {
             System.out.println(runTest(testClass, runDurationMillis, threads));
         }
+        System.out.println();
     }
 }
