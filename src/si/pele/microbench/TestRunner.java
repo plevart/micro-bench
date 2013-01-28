@@ -28,7 +28,7 @@ public class TestRunner {
         private CountDownLatch startLatch, stopLatch;
         long ops, nanos;
 
-        void start(CountDownLatch startLatch, CountDownLatch stopLatch) {
+        final void start(CountDownLatch startLatch, CountDownLatch stopLatch) {
             this.startLatch = startLatch;
             this.stopLatch = stopLatch;
             super.start();
@@ -36,6 +36,7 @@ public class TestRunner {
 
         @Override
         public void run() {
+            init();
             long ops = 0L;
             startLatch.countDown();
             while (!run) {
@@ -64,6 +65,8 @@ public class TestRunner {
             join();
             checkConsumeCounts(ops, defaultValuesConsumed, nonDefaultValuesConsumed);
         }
+
+        protected void init() { }
 
         protected abstract void doOp();
 
