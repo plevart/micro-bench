@@ -1,6 +1,6 @@
 package si.pele.microbench;
 
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 /**
@@ -11,100 +11,132 @@ import java.util.function.Supplier;
 public class TestRunner {
 
     public static abstract class Test extends Thread {
-        private static boolean
-            p00, p01, p02, p03, p04, p05, p06, p07, p08, p09, p0a, p0b, p0c, p0d, p0e, p0f,
-            p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p1a, p1b, p1c, p1d, p1e, p1f,
-            p20, p21, p22, p23, p24, p25, p26, p27, p28, p29, p2a, p2b, p2c, p2d, p2e, p2f,
-            p30, p31, p32, p33, p34, p35, p36, p37, p38, p39, p3a, p3b, p3c, p3d, p3e, p3f;
-        //
-        static volatile boolean run;
-        //
-        private static boolean
-            q00, q01, q02, q03, q04, q05, q06, q07, q08, q09, q0a, q0b, q0c, q0d, q0e, q0f,
-            q10, q11, q12, q13, q14, q15, q16, q17, q18, q19, q1a, q1b, q1c, q1d, q1e, q1f,
-            q20, q21, q22, q23, q24, q25, q26, q27, q28, q29, q2a, q2b, q2c, q2d, q2e, q2f,
-            q30, q31, q32, q33, q34, q35, q36, q37, q38, q39, q3a, q3b, q3c, q3d, q3e, q3f;
 
-        private CountDownLatch startLatch, stopLatch;
+        private AtomicInteger sync;
         long ops, nanos;
 
-        final void start(CountDownLatch startLatch, CountDownLatch stopLatch) {
-            this.startLatch = startLatch;
-            this.stopLatch = stopLatch;
+        final void start(AtomicInteger startSync) {
+            this.sync = startSync;
             super.start();
         }
 
+        public DevNull[] devNulls;
+
         @Override
         public void run() {
+            final DevNull devNull1 = new DevNull();
+            final DevNull devNull2 = new DevNull();
+            final DevNull devNull3 = new DevNull();
+            final DevNull devNull4 = new DevNull();
+            final DevNull devNull5 = new DevNull();
+            // make sure escape analysis finds devNulls as escaped!
+            devNulls = new DevNull[]{devNull1, devNull2, devNull3, devNull4, devNull5};
             init();
-            long ops = 0L;
-            startLatch.countDown();
-            while (!run) {
-                doOp();
+            for (
+                int remaining = sync.decrementAndGet();
+                remaining > 0;
+                remaining = sync.get()
+                ) {
+                doOp(devNull1, devNull2, devNull3, devNull4, devNull5);
             }
-            dvc = ndvc = 0L;
+            long ops = 0L;
             long t0 = System.nanoTime();
-            while (run) {
-                doOp();
+            while (sync.get() == 0) {
+                doOp(devNull1, devNull2, devNull3, devNull4, devNull5);
                 ops++;
             }
             long t1 = System.nanoTime();
-            defaultValuesConsumed = dvc;
-            nonDefaultValuesConsumed = ndvc;
-            stopLatch.countDown();
-            while (!run) {
-                doOp();
+            for (
+                int remaining = sync.decrementAndGet();
+                remaining > 0;
+                remaining = sync.get()
+                ) {
+                doOp(devNull1, devNull2, devNull3, devNull4, devNull5);
             }
             this.ops = ops;
             this.nanos = t1 - t0;
         }
 
-        private long defaultValuesConsumed, nonDefaultValuesConsumed;
-
-        final void joinAndCheck() throws InterruptedException {
-            join();
-            checkConsumeCounts(ops, defaultValuesConsumed, nonDefaultValuesConsumed);
-        }
-
         protected void init() { }
 
-        protected abstract void doOp();
+        protected abstract void doOp(DevNull devNull1, DevNull devNull2, DevNull devNull3, DevNull devNull4, DevNull devNull5);
+    }
 
-        protected void checkConsumeCounts(long ops, long defaultValuesConsumed, long nonDefaultValuesConsumed) {
-            if (ops > 0L && defaultValuesConsumed + nonDefaultValuesConsumed == 0L)
-                throw new IllegalStateException("No values consumed");
+    public static final class DevNull {
+
+        // booleans
+
+        private boolean
+            b00, b01, b02, b03, b04, b05, b06, b07,
+            b08, b09, b0A, b0B, b0C, b0D, b0E, b0F,
+            b10, b11, b12, b13, b14, b15, b16, b17,
+            b18, b19, b1A, b1B, b1C, b1D, b1E, b1F,
+            b20, b21, b22, b23, b24, b25, b26, b27,
+            b28, b29, b2A, b2B, b2C, b2D, b2E, b2F,
+            b30, b31, b32, b33, b34, b35, b36, b37,
+            b38, b39, b3A, b3B, b3C, b3D, b3E, b3F;
+
+        public boolean b;
+
+        public void yield(boolean b) {
+            this.b = b;
+        }
+
+        private boolean
+            b40, b41, b42, b43, b44, b45, b46, b47,
+            b48, b49, b4A, b4B, b4C, b4D, b4E, b4F,
+            b50, b51, b52, b53, b54, b55, b56, b57,
+            b58, b59, b5A, b5B, b5C, b5D, b5E, b5F,
+            b60, b61, b62, b63, b64, b65, b66, b67,
+            b68, b69, b6A, b6B, b6C, b6D, b6E, b6F,
+            b70, b71, b72, b73, b74, b75, b76, b77,
+            b78, b79, b7A, b7B, b7C, b7D, b7E, b7F;
+
+        // ints
+
+        private int
+            i00, i01, i02, i03, i04, i05, i06, i07,
+            i08, i09, i0A, i0B, i0C, i0D, i0E, i0F;
+
+        public int i;
+
+        public void yield(int i) {
+            this.i = i;
+        }
+
+        private int
+            i10, i11, i12, i13, i14, i15, i16, i17,
+            i18, i19, i1A, i1B, i1C, i1D, i1E, i1F;
+
+        // longs
+
+        private long
+            l00, l01, l02, l03, l04, l05, l06, l07;
+
+        public long l;
+
+        public void yield(long l) {
+            this.l = l;
         }
 
         private long
-            r00, r01, r02, r03, r04, r05, r06, r07,
-            r08, r09, r0a, r0b, r0c, r0d, r0e, r0f;
-        //
-        private long dvc, ndvc;
-        //
-        private long
-            s00, s01, s02, s03, s04, s05, s06, s07,
-            s08, s09, s0a, s0b, s0c, s0d, s0e, s0f;
+            l08, l09, l0A, l0B, l0C, l0D, l0E, l0F;
 
-        protected final void consume(Object o) {
-            if (o == null)
-                dvc++;
-            else
-                ndvc++;
+        // objects
+
+        private Object
+            o00, o01, o02, o03, o04, o05, o06, o07,
+            o08, o09, o0A, o0B, o0C, o0D, o0E, o0F;
+
+        public Object o;
+
+        public void yield(Object o) {
+            this.o = o;
         }
 
-        protected final void consume(int i) {
-            if (i == 0)
-                dvc++;
-            else
-                ndvc++;
-        }
-
-        protected final void consume(boolean b) {
-            if (b)
-                ndvc++;
-            else
-                dvc++;
-        }
+        private Object
+            o10, o11, o12, o13, o14, o15, o16, o17,
+            o18, o19, o1A, o1B, o1C, o1D, o1E, o1F;
     }
 
     public static class Result {
@@ -113,11 +145,25 @@ public class TestRunner {
         public final double nsPerOpAvg, nsPerOpSigma;
         private final double nsPerOps[];
 
-        public Result(String testName, int threads, double nsPerOpAvg, double nsPerOpSigma, double nsPerOps[]) {
+        public Result(String testName, int threads, long[] opss, long[] nanoss) {
             this.testName = testName;
             this.threads = threads;
+
+            long opsSum = 0L;
+            long nanosSum = 0L;
+            double nsPerOpAvg = (double) nanosSum / (double) opsSum;
+            double nsPerOpVar = 0d;
+            double nsPerOps[] = new double[threads];
+            for (int i = 0; i < threads; i++) {
+                double nsPerOp = (double) nanoss[i] / (double) opss[i];
+                nsPerOps[i] = nsPerOp;
+                double nsPerOpDiff = nsPerOpAvg - nsPerOp;
+                nsPerOpVar += nsPerOpDiff * nsPerOpDiff;
+            }
+            nsPerOpVar /= (double) threads;
+
             this.nsPerOpAvg = nsPerOpAvg;
-            this.nsPerOpSigma = nsPerOpSigma;
+            this.nsPerOpSigma = Math.sqrt(nsPerOpVar);
             this.nsPerOps = nsPerOps;
         }
 
@@ -145,39 +191,22 @@ public class TestRunner {
         Test[] tests = new Test[threads];
         for (int i = 0; i < threads; i++)
             tests[i] = testFactory.get();
-        CountDownLatch startLatch = new CountDownLatch(threads);
-        CountDownLatch stopLatch = new CountDownLatch(threads);
-        Test.run = false;
+        AtomicInteger sync = new AtomicInteger(threads);
         for (Test test : tests)
-            test.start(startLatch, stopLatch);
-        startLatch.await();
-        Thread.sleep(250L); // pre-run overlap
-        Test.run = true;
+            test.start(sync);
         Thread.sleep(runDurationMillis);
-        Test.run = false;
-        stopLatch.await();
-        Thread.sleep(250L); // post-run overlap
-        Test.run = true;
-        long opsSum = 0L;
-        long nanosSum = 0L;
-        for (Test test : tests) {
-            test.joinAndCheck();
-            opsSum += test.ops;
-            nanosSum += test.nanos;
-        }
-        Test.run = false;
-        double nsPerOpAvg = (double) nanosSum / (double) opsSum;
-        double nsPerOpVar = 0d;
-        double nsPerOps[] = new double[threads];
+        while (sync.get() > 0)
+            Thread.sleep(10); // in case runDurationMillis was to small
+        sync.set(threads);
+        long[] opss = new long[threads];
+        long[] nanoss = new long[threads];
         for (int i = 0; i < threads; i++) {
             Test test = tests[i];
-            double nsPerOp = (double) test.nanos / (double) test.ops;
-            nsPerOps[i] = nsPerOp;
-            double nsPerOpDiff = nsPerOpAvg - nsPerOp;
-            nsPerOpVar += nsPerOpDiff * nsPerOpDiff;
+            test.join();
+            opss[i] = test.ops;
+            nanoss[i] = test.nanos;
         }
-        nsPerOpVar /= (double) threads;
-        return new Result(tests[0].getClass().getSimpleName(), threads, nsPerOpAvg, Math.sqrt(nsPerOpVar), nsPerOps);
+        return new Result(tests[0].getClass().getSimpleName(), threads, opss, nanoss);
     }
 
     protected static Result runTest(final Class<? extends Test> testClass, long runDurationMillis, int threads) throws InterruptedException {
