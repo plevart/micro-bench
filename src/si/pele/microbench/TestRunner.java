@@ -1,7 +1,6 @@
 package si.pele.microbench;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 
 /**
  * A simple micro benchmark test runner
@@ -10,11 +9,16 @@ import java.util.function.Supplier;
  */
 public class TestRunner {
 
-    private static Result runTest(Supplier<? extends Test> testFactory, long runDurationMillis, int threads) throws InterruptedException {
+    private static Result runTest(Class<? extends Test> testClass, long runDurationMillis, int threads) throws InterruptedException {
 
         Test[] tests = new Test[threads];
         for (int i = 0; i < threads; i++)
-            tests[i] = testFactory.get();
+            try {
+                tests[i] = testClass.newInstance();
+            }
+            catch (InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException(e.getMessage(), e);
+            }
 
         AtomicInteger rampUpSync = new AtomicInteger(threads);
         AtomicInteger runSync = new AtomicInteger(1);
@@ -39,24 +43,6 @@ public class TestRunner {
         }
 
         return new Result(tests[0].getClass().getSimpleName(), threads, opss, nanoss);
-    }
-
-    private static Result runTest(final Class<? extends Test> testClass, long runDurationMillis, int threads) throws InterruptedException {
-        return runTest(
-            new Supplier<Test>() {
-                @Override
-                public Test get() {
-                    try {
-                        return testClass.newInstance();
-                    }
-                    catch (InstantiationException | IllegalAccessException e) {
-                        throw new RuntimeException(e.getMessage(), e);
-                    }
-                }
-            },
-            runDurationMillis,
-            threads
-        );
     }
 
     public static void doTest(Class<? extends Test> testClass, long runDurationMillis, int minThreads, int maxThreads, int stepThreads) throws InterruptedException {
@@ -203,7 +189,8 @@ public class TestRunner {
             if (sync.get() > 0) {
                 ops++;
                 return true;
-            } else {
+            }
+            else {
                 return false;
             }
         }
