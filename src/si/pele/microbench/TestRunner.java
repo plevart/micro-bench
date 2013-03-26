@@ -45,19 +45,56 @@ public class TestRunner {
         return new Result(tests[0].getClass().getSimpleName(), threads, opss, nanoss);
     }
 
-    public static void doTest(Class<? extends Test> testClass, long runDurationMillis, int minThreads, int maxThreads, int stepThreads) throws InterruptedException {
-        System.out.println("#");
-        System.out.printf("# %s: run duration: %,6d ms, #of logical CPUS: %d\n", testClass.getSimpleName(), runDurationMillis, Runtime.getRuntime().availableProcessors());
-        System.out.println("#");
-        System.out.println("# Warm up:");
-        System.out.println(runTest(testClass, runDurationMillis, minThreads));
-        System.out.println(runTest(testClass, runDurationMillis, minThreads));
+    public static void startTests() {
+        System.out.printf("##############################################################\n");
+        System.out.printf("# Java: %s\n", System.getProperty("java.runtime.version"));
+        System.out.printf("#   VM: %s %s (%s)\n", System.getProperty("java.vm.name"), System.getProperty("java.vm.version"), System.getProperty("java.vm.info"));
+        System.out.printf("#   OS: %s %s (%s)\n", System.getProperty("os.name"), System.getProperty("os.version"), System.getProperty("os.arch"));
+        System.out.printf("# CPUs: %d (virtual)\n", Runtime.getRuntime().availableProcessors());
+        System.out.printf("#\n");
+    }
 
-        System.out.println("# Measure:");
-        for (int threads = minThreads; threads <= maxThreads; threads += stepThreads) {
-            System.out.println(runTest(testClass, runDurationMillis, threads));
+    public static void doTest(Class<? extends Test> testClass, long runDurationMillis, int minThreads, int maxThreads, int stepThreads) throws InterruptedException {
+        doTest(testClass, runDurationMillis, minThreads, maxThreads, stepThreads, 2, 1);
+    }
+
+    public static void doTest(Class<? extends Test> testClass, long runDurationMillis, int minThreads, int maxThreads, int stepThreads, int warmUpRepeatRuns, int measureRepeatRuns) throws InterruptedException {
+
+        System.out.printf("#-------------------------------------------------------------\n");
+        System.out.printf("# %s: run duration: %,6d ms\n", testClass.getSimpleName(), runDurationMillis);
+        System.out.printf("#\n");
+
+        if (warmUpRepeatRuns > 0) {
+            System.out.printf("# Warm up:\n");
+            for (int i = 0; i < warmUpRepeatRuns; i++) {
+                System.out.printf("#%s\n", runTest(testClass, runDurationMillis, minThreads));
+            }
         }
-        System.out.println();
+
+        if (measureRepeatRuns > 0) {
+            System.out.printf("# Measure:\n");
+            for (int i = 0; i < measureRepeatRuns; i++) {
+                for (int threads = minThreads; threads <= maxThreads; threads += stepThreads) {
+                    System.out.printf(" %s\n", runTest(testClass, runDurationMillis, threads));
+                }
+            }
+        }
+
+        System.out.printf("#\n");
+    }
+
+    public static void doAction(String message, Runnable action) {
+        System.out.printf("#-------------------------------------------------------------\n");
+        System.out.printf("# %s\n", message);
+        System.out.printf("#\n");
+        action.run();
+        System.out.printf("#\n");
+    }
+
+    public static void endTests() {
+        System.out.printf("#-------------------------------------------------------------\n");
+        System.out.printf("# END.\n");
+        System.out.printf("##############################################################\n");
     }
 
     /**
@@ -189,8 +226,7 @@ public class TestRunner {
             if (sync.get() > 0) {
                 ops++;
                 return true;
-            }
-            else {
+            } else {
                 return false;
             }
         }
