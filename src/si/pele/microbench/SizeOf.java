@@ -97,7 +97,7 @@ public class SizeOf
                 return (obj == Character.valueOf((Character) obj));
             }
         }
-        else if (obj instanceof Class)
+        else if (obj instanceof Class || obj instanceof ClassLoader)
         {
             return true;
         }
