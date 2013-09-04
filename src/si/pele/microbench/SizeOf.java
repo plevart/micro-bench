@@ -22,15 +22,17 @@ public class SizeOf
     }
 
     private final Visitor visitor;
+    private final Object[] internedObjects;
 
     public SizeOf()
     {
         this(Visitor.NULL);
     }
 
-    public SizeOf(Visitor visitor)
+    public SizeOf(Visitor visitor, Object ... internedObjects)
     {
         this.visitor = visitor;
+        this.internedObjects = internedObjects;
     }
 
     /**
@@ -100,6 +102,16 @@ public class SizeOf
         else if (obj instanceof Class || obj instanceof ClassLoader)
         {
             return true;
+        }
+        else
+        {
+            for (Object o : internedObjects)
+            {
+                if (o == obj)
+                {
+                    return true;
+                }
+            }
         }
         return false;
     }
